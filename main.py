@@ -53,7 +53,7 @@ train_ds = train_ds.map(lambda x, y: (data_augmentation(x), y))
 #Plotting the images in dataset
 show_img(train_ds)
 
-# load pre-trained InceptionV3
+# load pre-trained MobileNet
 pre_trained = MobileNet(weights='imagenet', include_top=False, input_shape=img_shape, pooling='avg')
 
 for layer in pre_trained.layers:
