@@ -112,9 +112,6 @@ def show_img(data):
             ax = plt.subplot(3, 3, i + 1)
             ax.imshow(images[i].numpy().astype("uint8"))
             ax.axis("off")
-
-#Plotting the images in dataset
-show_img(train_ds)
 ```
 
 Output:
@@ -123,6 +120,44 @@ Output:
 
 
 
+
+
+## 2 - Preprocess and Augment Training Data
+
+
+ your model learn the data better, it's standard practice to augment the images by transforming them, i.e., randomly flipping and rotating them. Keras' Sequential API offers a straightforward method for these kinds of data augmentations, with built-in, customizable preprocessing layers. These layers are saved with the rest of your model and can be re-used later.
+ 
+ 
+ 
+ As always, you're invited to read the official docs, which you can find for data augmentation [here](https://www.tensorflow.org/tutorials/images/data_augmentation).
+
+Implement data augmentation. Use a `Sequential` keras model composed of 4 layers.
+
+```python
+data_augmentation = tf.keras.Sequential([tf.keras.layers.RandomFlip("horizontal"),
+                                         tf.keras.layers.GaussianNoise(10),
+                                         tf.keras.layers.RandomContrast(0.1),
+                                         tf.keras.layers.RandomZoom(0.2)
+                                        ])
+
+train_ds = train_ds.map(lambda x, y: (data_augmentation(x), y))
+```
+
+
+
+`
+```python
+
+#Plotting the images in dataset
+show_img(train_ds)
+```
+ 
+ 
+ 
+Output:
+
+ 
+ ![image](https://user-images.githubusercontent.com/86894225/190185605-de301608-abfd-4caf-828c-4b845ca23901.png)
 
 
 
