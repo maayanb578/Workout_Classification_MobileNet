@@ -113,6 +113,10 @@ for images, labels in train_dataset.take(1):
 
 Output:
 
+![image](https://user-images.githubusercontent.com/86894225/190180930-6b645428-e807-4c9e-9b3b-e7ff88846878.png)
+
+
+
 
 
 
