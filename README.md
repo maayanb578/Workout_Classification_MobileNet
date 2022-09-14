@@ -90,9 +90,13 @@ val_ds = tf.keras.utils.image_dataset_from_directory(DATA_DIR,
 Output: 
 
 Found 1942 files belonging to 8 classes.
+
 Using 1748 files for training.
+
 Found 1942 files belonging to 8 classes.
+
 Using 194 files for validation.
+
 ['bench press', 'biceps curl', 'chest fly machine', 'deadlift', 'incline bench press', 'lat pulldown', 'push-up', 'tricep pushdown']
 
 
