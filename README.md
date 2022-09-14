@@ -104,15 +104,17 @@ Now let's take a look at some of the images from the training set:
 
 
 ```python
-class_names = train_dataset.class_names
+#Defing a function to see images
+def show_img(data):
+    plt.figure(figsize=(10,10))
+    for images, labels in data.take(1):
+        for i in range(9):
+            ax = plt.subplot(3, 3, i + 1)
+            ax.imshow(images[i].numpy().astype("uint8"))
+            ax.axis("off")
 
-plt.figure(figsize=(10, 10))
-for images, labels in train_dataset.take(1):
-    for i in range(9):
-        ax = plt.subplot(3, 3, i + 1)
-        plt.imshow(images[i].numpy().astype("uint8"))
-        plt.title(class_names[labels[i]])
-        plt.axis("off")
+#Plotting the images in dataset
+show_img(train_ds)
 ```
 
 Output:
