@@ -162,9 +162,376 @@ Output:
 
 
 
+##3 - Using MobileNet for Transfer Learning
+
+MobileNet was trained on ImageNet and is optimized to run on mobile and other low-power applications. It's very efficient for object detection and image segmentation tasks, as well as classification tasks like this one. The architecture has three defining characteristics:
+
+*   Depthwise separable convolutions
+*   Thin input and output bottlenecks between layers
+*   Shortcut connections between bottleneck layers
+
+MobileNet uses depthwise separable convolutions as efficient building blocks. Traditional convolutions are often very resource-intensive, and  depthwise separable convolutions are able to reduce the number of trainable parameters and operations and also speed up convolutions in two steps:
+
+1. The first step calculates an intermediate result by convolving on each of the channels independently. This is the depthwise convolution.
+2. In the second step, another convolution merges the outputs of the previous step into one. This gets a single result from a single feature at a time, and then is applied to all the filters in the output layer. This is the pointwise convolution, or: Shape of the depthwise convolution X Number of filters.
+
+
+```python
+
+pre_trained = MobileNet(weights='imagenet', include_top=False, input_shape=img_shape, pooling='avg')
+
+for layer in pre_trained.layers:
+    layer.trainable = False
+```
+
+
+output:
+
+Downloading data from https://storage.googleapis.com/tensorflow/keras-applications/mobilenet/mobilenet_1_0_224_tf_no_top.h5
+17227776/17225924 [==============================] - 0s 0us/step
+17235968/17225924 [==============================] - 0s 0us/step
 
 
 
+```python
 
+x = pre_trained.output
+x = tf.keras.layers.BatchNormalization(axis=-1, momentum=0.99, epsilon=0.001)(x)
+x = tf.keras.layers.Dropout(0.2)(x)
+x = tf.keras.layers.Dense(1024, activation='relu')(x)
+x = tf.keras.layers.Dense(512, activation='relu')(x)
+x = tf.keras.layers.Dense(256, activation='relu')(x)
+x = tf.keras.layers.Dropout(0.2)(x)
+predictions = tf.keras.layers.Dense(len(labels), activation='softmax')(x)
+
+workout_model = tf.keras.models.Model(inputs = pre_trained.input, 
+                                      outputs = predictions
+                                     )
+
+workout_model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001),
+                      loss='categorical_crossentropy',
+                      metrics=['accuracy']
+                     )
+
+workout_model.summary()
+```
+
+
+Output:
+
+Model: "model"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ input_1 (InputLayer)        [(None, 256, 256, 3)]     0         
+                                                                 
+ conv1 (Conv2D)              (None, 128, 128, 32)      864       
+                                                                 
+ conv1_bn (BatchNormalizatio  (None, 128, 128, 32)     128       
+ n)                                                              
+                                                                 
+ conv1_relu (ReLU)           (None, 128, 128, 32)      0         
+                                                                 
+ conv_dw_1 (DepthwiseConv2D)  (None, 128, 128, 32)     288       
+                                                                 
+ conv_dw_1_bn (BatchNormaliz  (None, 128, 128, 32)     128       
+ ation)                                                          
+                                                                 
+ conv_dw_1_relu (ReLU)       (None, 128, 128, 32)      0         
+                                                                 
+ conv_pw_1 (Conv2D)          (None, 128, 128, 64)      2048      
+                                                                 
+ conv_pw_1_bn (BatchNormaliz  (None, 128, 128, 64)     256       
+ ation)                                                          
+                                                                 
+ conv_pw_1_relu (ReLU)       (None, 128, 128, 64)      0         
+                                                                 
+ conv_pad_2 (ZeroPadding2D)  (None, 129, 129, 64)      0         
+                                                                 
+ conv_dw_2 (DepthwiseConv2D)  (None, 64, 64, 64)       576       
+ 
+ conv_dw_2_bn (BatchNormaliz  (None, 64, 64, 64)       256       
+ ation)                                                          
+                                                                 
+ conv_dw_2_relu (ReLU)       (None, 64, 64, 64)        0         
+                                                                 
+ conv_pw_2 (Conv2D)          (None, 64, 64, 128)       8192      
+                                                                 
+ conv_pw_2_bn (BatchNormaliz  (None, 64, 64, 128)      512       
+ ation)                                                          
+                                                                 
+ conv_pw_2_relu (ReLU)       (None, 64, 64, 128)       0         
+                                                                 
+ conv_dw_3 (DepthwiseConv2D)  (None, 64, 64, 128)      1152      
+                                                                 
+ conv_dw_3_bn (BatchNormaliz  (None, 64, 64, 128)      512       
+ ation)                                                          
+                                                                 
+ conv_dw_3_relu (ReLU)       (None, 64, 64, 128)       0         
+                                                                 
+ conv_pw_3 (Conv2D)          (None, 64, 64, 128)       16384     
+                                                                 
+ conv_pw_3_bn (BatchNormaliz  (None, 64, 64, 128)      512       
+ ation)                                                          
+                                                                 
+ conv_pw_3_relu (ReLU)       (None, 64, 64, 128)       0         
+                                                                 
+ conv_pad_4 (ZeroPadding2D)  (None, 65, 65, 128)       0         
+                                                                 
+ conv_dw_4 (DepthwiseConv2D)  (None, 32, 32, 128)      1152      
+                                                                 
+ conv_dw_4_bn (BatchNormaliz  (None, 32, 32, 128)      512       
+ ation)                                                          
+                                                                 
+ conv_dw_4_relu (ReLU)       (None, 32, 32, 128)       0         
+                                                                 
+ conv_pw_4 (Conv2D)          (None, 32, 32, 256)       32768     
+                                                                 
+ conv_pw_4_bn (BatchNormaliz  (None, 32, 32, 256)      1024      
+ ation)                                                          
+                                                                 
+ conv_pw_4_relu (ReLU)       (None, 32, 32, 256)       0         
+                                                                 
+ conv_dw_5 (DepthwiseConv2D)  (None, 32, 32, 256)      2304      
+ 
+  conv_dw_5_bn (BatchNormaliz  (None, 32, 32, 256)      1024      
+ ation)                                                          
+                                                                 
+ conv_dw_5_relu (ReLU)       (None, 32, 32, 256)       0         
+                                                                 
+ conv_pw_5 (Conv2D)          (None, 32, 32, 256)       65536     
+                                                                 
+ conv_pw_5_bn (BatchNormaliz  (None, 32, 32, 256)      1024      
+ ation)                                                          
+                                                                 
+ conv_pw_5_relu (ReLU)       (None, 32, 32, 256)       0         
+                                                                 
+ conv_pad_6 (ZeroPadding2D)  (None, 33, 33, 256)       0         
+                                                                 
+ conv_dw_6 (DepthwiseConv2D)  (None, 16, 16, 256)      2304      
+                                                                 
+ conv_dw_6_bn (BatchNormaliz  (None, 16, 16, 256)      1024      
+ ation)                                                          
+                                                                 
+ conv_dw_6_relu (ReLU)       (None, 16, 16, 256)       0         
+                                                                 
+ conv_pw_6 (Conv2D)          (None, 16, 16, 512)       131072    
+                                                                 
+ conv_pw_6_bn (BatchNormaliz  (None, 16, 16, 512)      2048      
+ ation)                                                          
+                                                                 
+ conv_pw_6_relu (ReLU)       (None, 16, 16, 512)       0         
+                                                                 
+ conv_dw_7 (DepthwiseConv2D)  (None, 16, 16, 512)      4608      
+                                                                 
+ conv_dw_7_bn (BatchNormaliz  (None, 16, 16, 512)      2048      
+ ation)                                                          
+                                                                 
+ conv_dw_7_relu (ReLU)       (None, 16, 16, 512)       0         
+                                                                 
+ conv_pw_7 (Conv2D)          (None, 16, 16, 512)       262144    
+                                                                 
+ conv_pw_7_bn (BatchNormaliz  (None, 16, 16, 512)      2048      
+ ation)                                                          
+                                                                 
+ conv_pw_7_relu (ReLU)       (None, 16, 16, 512)       0         
+ 
+ conv_dw_8 (DepthwiseConv2D)  (None, 16, 16, 512)      4608      
+                                                                 
+ conv_dw_8_bn (BatchNormaliz  (None, 16, 16, 512)      2048      
+ ation)                                                          
+                                                                 
+ conv_dw_8_relu (ReLU)       (None, 16, 16, 512)       0         
+                                                                 
+ conv_pw_8 (Conv2D)          (None, 16, 16, 512)       262144    
+                                                                 
+ conv_pw_8_bn (BatchNormaliz  (None, 16, 16, 512)      2048      
+ ation)                                                          
+                                                                 
+ conv_pw_8_relu (ReLU)       (None, 16, 16, 512)       0         
+                                                                 
+ conv_dw_9 (DepthwiseConv2D)  (None, 16, 16, 512)      4608      
+                                                                 
+ conv_dw_9_bn (BatchNormaliz  (None, 16, 16, 512)      2048      
+ ation)                                                          
+                                                                 
+ conv_dw_9_relu (ReLU)       (None, 16, 16, 512)       0         
+                                                                 
+ conv_pw_9 (Conv2D)          (None, 16, 16, 512)       262144    
+                                                                 
+ conv_pw_9_bn (BatchNormaliz  (None, 16, 16, 512)      2048      
+ ation)                                                          
+                                                                 
+ conv_pw_9_relu (ReLU)       (None, 16, 16, 512)       0         
+                                                                 
+ conv_dw_10 (DepthwiseConv2D  (None, 16, 16, 512)      4608      
+ )                                                               
+                                                                 
+ conv_dw_10_bn (BatchNormali  (None, 16, 16, 512)      2048      
+ zation)                                                         
+                                                                 
+ conv_dw_10_relu (ReLU)      (None, 16, 16, 512)       0         
+                                                                 
+ conv_pw_10 (Conv2D)         (None, 16, 16, 512)       262144    
+                                                                 
+ conv_pw_10_bn (BatchNormali  (None, 16, 16, 512)      2048      
+ zation)                                                         
+                                                                 
+ conv_pw_10_relu (ReLU)      (None, 16, 16, 512)       0         
+                                                                 
+ conv_dw_11 (DepthwiseConv2D  (None, 16, 16, 512)      4608      
+ )                                                               
+                                                                 
+ conv_dw_11_bn (BatchNormali  (None, 16, 16, 512)      2048      
+ zation)                                                         
+                                                                 
+ conv_dw_11_relu (ReLU)      (None, 16, 16, 512)       0         
+                                                                 
+ conv_pw_11 (Conv2D)         (None, 16, 16, 512)       262144    
+                                                                 
+ conv_pw_11_bn (BatchNormali  (None, 16, 16, 512)      2048      
+ zation)                                                         
+                                                                 
+ conv_pw_11_relu (ReLU)      (None, 16, 16, 512)       0         
+                                                                 
+ conv_pad_12 (ZeroPadding2D)  (None, 17, 17, 512)      0         
+                                                                 
+ conv_dw_12 (DepthwiseConv2D  (None, 8, 8, 512)        4608      
+ )                                                               
+                                                                 
+ conv_dw_12_bn (BatchNormali  (None, 8, 8, 512)        2048      
+ zation)                                                         
+                                                                 
+ conv_dw_12_relu (ReLU)      (None, 8, 8, 512)         0         
+                                                                 
+ conv_pw_12 (Conv2D)         (None, 8, 8, 1024)        524288    
+                                                                 
+ conv_pw_12_bn (BatchNormali  (None, 8, 8, 1024)       4096      
+ zation)                                                         
+                                                                 
+ conv_pw_12_relu (ReLU)      (None, 8, 8, 1024)        0         
+                                                                 
+ conv_dw_13 (DepthwiseConv2D  (None, 8, 8, 1024)       9216      
+ )                                                               
+                                                                 
+ conv_dw_13_bn (BatchNormali  (None, 8, 8, 1024)       4096      
+ zation)                                                         
+                                                                 
+ conv_dw_13_relu (ReLU)      (None, 8, 8, 1024)        0         
+                                                                 
+ conv_pw_13 (Conv2D)         (None, 8, 8, 1024)        1048576   
+                                                                 
+ conv_pw_13_bn (BatchNormali  (None, 8, 8, 1024)       4096      
+ zation)                                                       
+
+conv_pw_13_relu (ReLU)      (None, 8, 8, 1024)        0         
+                                                                 
+ global_average_pooling2d (G  (None, 1024)             0         
+ lobalAveragePooling2D)                                          
+                                                                 
+ batch_normalization (BatchN  (None, 1024)             4096      
+ ormalization)                                                   
+                                                                 
+ dropout (Dropout)           (None, 1024)              0         
+                                                                 
+ dense (Dense)               (None, 1024)              1049600   
+                                                                 
+ dense_1 (Dense)             (None, 512)               524800    
+                                                                 
+ dense_2 (Dense)             (None, 256)               131328    
+                                                                 
+ dropout_1 (Dropout)         (None, 256)               0         
+                                                                 
+ dense_3 (Dense)             (None, 8)                 2056      
+                                                                 
+=================================================================
+Total params: 4,940,744
+Trainable params: 1,709,832
+Non-trainable params: 3,230,912
+_________________________________________________________________
+
+
+
+## 4 - Early Stoping and history 
+
+Early stopping is a form of regularization used to avoid overfitting on the training dataset. Early stopping keeps track of the validation loss, if the loss stops decreasing for several epochs in a row the training stops.
+
+
+
+```python
+early_stopping_callback = EarlyStopping(monitor = 'val_loss', 
+                                        patience = 5, 
+                                        mode = 'min', 
+                                        restore_best_weights = True
+                                       )
+
+history = workout_model.fit(train_ds,
+                            validation_data = val_ds,
+                            epochs = 100,
+                            callbacks = [early_stopping_callback]
+                           )
+```
+
+
+In the next sections, you'll see how you can use a pretrained model to modify the classifier task so that it's able to recognize workout exercises. You can achieve this in three steps:
+
+1. Delete the top layer (the classification layer).
+    - Set include_top in base_model as False.
+2. Add a new classifier layer.
+    - Train only one layer by freezing the rest of the network.
+    - As mentioned before, a single neuron is enough to solve a binary classification problem.
+3. Freeze the base model and train the newly-created classifier layer.
+    - Set base model.trainable=False to avoid changing the weights and train only the new layer.
+    - Set training in base_model to False to avoid keeping track of statistics in the batch norm layer.
+
+
+# Plot the training and validation accuracy:
+
+
+```python
+evaluate = workout_model.evaluate(val_ds)
+
+epoch = range(len(history.history["loss"]))
+plt.figure()
+plt.plot(epoch, history.history['loss'], 'red', label = 'train_loss')
+plt.plot(epoch, history.history['val_loss'], 'blue', label = 'val_loss')
+plt.plot(epoch, history.history['accuracy'], 'orange', label = 'train_acc')
+plt.plot(epoch, history.history['val_accuracy'], 'green', label = 'val_acc')
+plt.title("Training Loss and Accuracy on Dataset")
+plt.xlabel("Epoch #")
+plt.ylabel("Loss/Accuracy")
+plt.legend()
+```
+
+
+Output:
+
+
+4/4 [==============================] - 1s 72ms/step - loss: 0.1749 - accuracy: 0.9536
+<matplotlib.legend.Legend at 0x7f17879d2210>
+
+![image](https://user-images.githubusercontent.com/86894225/191490823-a65a646a-f5c6-4954-aa43-9648f409f4f6.png)
+
+
+
+# Save the result of the trained model
+
+
+```python
+
+# Save Model
+workout_model.save('workout_model')
+
+# Save .h5 model
+workout_model.save('workout_model.h5')
+
+# Convert the model to tflite
+converter = tf.lite.TFLiteConverter.from_saved_model('./workout_model')
+tflite_model = converter.convert()
+
+# Save the tflite model
+with open('workout_model.tflite', 'wb') as f:
+    f.write(tflite_model)
+```
 
 
